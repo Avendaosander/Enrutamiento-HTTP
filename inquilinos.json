@@ -1,0 +1,34 @@
+[
+   {
+      "id": "e7b11030-9850-42e2-9a02-e7e712ced2ca",
+      "nombre": "Alexander Jose Avendaño Ramirez",
+      "edad": "19",
+      "sexo": "Masculino",
+      "telefono": "04165750804",
+      "direccion": "Carvajal El Amparo"
+   },
+   {
+      "id": "40d043a4-d764-42e6-a77c-6cadb7613725",
+      "nombre": "Jose Ramirez",
+      "edad": "20",
+      "sexo": "masculino",
+      "telefono": "123456789",
+      "direccion": "Chimpire"
+   },
+   {
+      "id": "4243788f-2003-41c2-9369-4caf2d044fe4",
+      "nombre": "Isabella Blanco",
+      "edad": "19",
+      "sexo": "femenino",
+      "telefono": "0987654321",
+      "direccion": "Sabana libre"
+   },
+   {
+      "id": "809300e5-dbf6-4be8-a303-de2c290f9887",
+      "nombre": "Juan Gonzalez",
+      "edad": "30",
+      "sexo": "MAsculino",
+      "telefono": "123456789",
+      "direccion": "La hoyada"
+   }
+]
