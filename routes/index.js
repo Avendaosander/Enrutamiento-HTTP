@@ -11,22 +11,6 @@ let habitacion = JSON.parse(json_habitaciones)
 const json_usuario = fs.readFileSync('inquilinos.json', 'utf-8')
 let usuario = JSON.parse(json_usuario)
 
-var habitaciones_uno = 0
-var habitaciones_dos = 0
-var habitaciones_cuatro = 0
-
-for (let i = 0; i < habitaciones.habitacion1.length + 1; i++) {
-  habitaciones_uno = i;
-};
-
-for (let i = 0; i < habitaciones.habitacion2.length + 1; i++) {
-  habitaciones_dos = i;
-};
-
-for (let i = 0; i < habitaciones.habitacion4.length + 1; i++) {
-  habitaciones_cuatro = i;
-};
-
 /* GET home page. */
 router.get('/', function (req, res) {
   res.status(200).send("Bienvenido al Hotel. Ingrese sus datos y la habitación que desea")
@@ -35,9 +19,9 @@ router.get('/', function (req, res) {
 router.get('/habitaciones', function(req, res) {
   try {
     res.status(200).json( { 
-      habitaciones_para_uno: 25-habitaciones_uno,
-      habitaciones_para_dos: 15-habitaciones_dos,
-      habitaciones_para_cuatro: 10-habitaciones_cuatro, 
+      habitaciones_para_uno: 25-habitaciones.habitacion1.length,
+      habitaciones_para_dos: 15-habitaciones.habitacion2.length,
+      habitaciones_para_cuatro: 10-habitaciones.habitacion4.length, 
     });
   } catch (error) {
     res.status(500).json({
@@ -80,9 +64,9 @@ router.post('/new-user', function (req, res) {
         if (isNaN(obj.edad) === false && obj.edad < 90) {
           if (obj.sexo.toLowerCase() == "masculino" || obj.sexo.toLowerCase() == "femenino") {
             if (isNaN(obj.telefono) === false && obj.telefono.length < 15 ) {
-              if (/^[A-Za-zñÑáéíóúÁÉÍÓÚüÜ\s]+$/g.test(obj.direccion)) {
+              if (/^[A-Za-zñÑáéíóúÁÉÍÓÚüÜs]+$/g.test(obj.direccion)) {
                 usuario.push(obj)
-              } else {res.status(400).send('La direccion está vacía, debe llenar todos los campos')}
+              } else {res.status(400).send('La direccion es invalida')}
             } else {res.status(400).send('Número de teléfono erróneo')}
           } else {res.status(400).send('El sexo es inválido')}
         } else {res.status(400).send('Edad inválida')}
@@ -110,15 +94,29 @@ router.post('/new-user/habitaciones/:id_user/:nro_habitacion', (req, res) => {
     if (id && nro == 1 || nro == 2 || nro == 4) {
       let newUserHabitacion = {id}
 
-      for (let hab in habitacion) {
-        if(hab == "habitacion"+nro){
-          habitacion[hab].push(newUserHabitacion)
+      function agregarHabitacion(valor) {
+        for (let hab in habitacion) {
+          if(hab == valor){
+            usuario.filter(user => {
+              if(user.id == id) {
+                habitacion[hab].push(newUserHabitacion)
+                let json_habitaciones = JSON.stringify(habitacion)
+                fs.writeFileSync('habitaciones.json', json_habitaciones, 'utf-8')
+                res.status(200).send("Usuario registrado en la habitacion")
+              }
+            })
+          }
         }
       }
 
-      let json_habitaciones = JSON.stringify(habitacion)
-      fs.writeFileSync('habitaciones.json', json_habitaciones, 'utf-8')
-      res.status(200).send("Usuario registrado en la habitacion")
+      if (nro == 1) {
+        habitaciones.habitacion1.length >= 25 ? res.status(400).send("No hay habitaciones disponibles para una persona") : agregarHabitacion("habitacion1")
+      } else if (nro == 2) {
+        habitaciones.habitacion2.length >= 15 ? res.status(400).send("No hay habitaciones disponibles para dos personas") : agregarHabitacion("habitacion2")
+      } else if (nro == 4) {
+        habitaciones.habitacion4.length >= 10 ? res.status(400).send("No hay habitaciones disponibles para cuatro personas") : agregarHabitacion("habitacion4")
+      }
+      
     } else {
       res.status(400).send("Id no existe")
     }
@@ -134,30 +132,47 @@ router.put('/inquilinos/update/:id', (req, res) => {
   try {
     let id_param = req.params.id
     if (id_param) { 
-      let {id, nombre, edad, sexo, telefono, direccion} = req.body;
-      
-      let updateUser = {
-        id,
-        nombre,
-        edad,
-        sexo,
-        telefono,
-        direccion
-      }
+      let {nombre, edad, sexo, telefono, direccion} = req.body;
 
-      usuario.filter(user => {
-        if(user.id == id_param) {
-          if(updateUser.nombre) user.nombre = updateUser.nombre;
-          if(updateUser.edad) user.edad = updateUser.edad;
-          if(updateUser.sexo) user.sexo = updateUser.sexo;
-          if(updateUser.telefono) user.telefono = updateUser.telefono;
-          if(updateUser.direccion) user.direccion = updateUser.direccion;
+      if ( !nombre && !edad && !sexo && !telefono && !direccion) {
+        res.status(400).send("Todos los campos están vacíos, debe modificar al menos un valor")
+      } else {
+        let updateUser = {
+          nombre,
+          edad,
+          sexo,
+          telefono,
+          direccion
         }
-      })
-      
-      let json_usuario = JSON.stringify(usuario)
-      fs.writeFileSync('inquilinos.json', json_usuario, 'utf-8')
-      res.status(200).send('Inquilino actualizado')
+        
+        usuario.filter(user => {
+          if(user.id == id_param) {
+            if(updateUser.nombre) {
+              /^[A-Za-zñÑáéíóúÁÉÍÓÚüÜ\s]+$/g.test(updateUser.nombre) ? user.nombre = updateUser.nombre : res.status(400).send('Nombre Invalido')
+            }
+
+            if(updateUser.edad) {
+              isNaN(updateUser.edad) === false && updateUser.edad < 90 ? user.edad = updateUser.edad : res.status(400).send('Edad Invalida')
+            }
+
+            if(updateUser.sexo) {
+              updateUser.sexo.toLowerCase() == "masculino" || updateUser.sexo.toLowerCase() == "femenino" ? user.sexo = updateUser.sexo : res.status(400).send('Sexo Invalido')
+            }
+
+            if(updateUser.telefono) {
+              isNaN(updateUser.telefono) === false && updateUser.telefono.length < 15 ? user.telefono = updateUser.telefono : res.status(400).send('Telefono Invalido')
+            }
+
+            if(updateUser.direccion) {
+              /^[A-Za-zñÑáéíóúÁÉÍÓÚüÜ0-9\-\s]+$/g.test(updateUser.direccion) ? user.direccion = updateUser.direccion : res.status(400).send('Direccion Invalida')
+            }
+          }
+        })
+        
+        let json_usuario = JSON.stringify(usuario)
+        fs.writeFileSync('inquilinos.json', json_usuario, 'utf-8')
+        res.status(200).send('Inquilino actualizado')
+      }
     } else {
       res.status(400).send("No ha ingresado ningun ID")
     }
@@ -179,17 +194,23 @@ router.put('/habitaciones/update/:id/:nro_habitacion', (req, res) => {
     if (id_param) {
       for (let hab in habitacion) {
         if(hab == "habitacion"+nro){
-          habitacion[hab].forEach((element) => {
-            if (element.id == id_param) {
-              if(updateHabitacion.id) element.id = updateHabitacion.id
+          usuario.filter(user => {
+            if(user.id == id) {
+              habitacion[hab].forEach((room) => {
+                if (room.id == id_param) {
+                  room.id = updateHabitacion.id
+                  let json_habitaciones = JSON.stringify(habitacion)
+                  fs.writeFileSync('habitaciones.json', json_habitaciones, 'utf-8')
+                  res.status(200).send("Habitación actualizada")
+                }
+              })
             }
           })
+          res.status(400).send('Ingrese ID Valido')
         }
       }
-    }
-    let json_habitaciones = JSON.stringify(habitacion)
-    fs.writeFileSync('habitaciones.json', json_habitaciones, 'utf-8')
-    res.status(200).send("Habitación actualizada")
+      res.status(400).send('Habitacion no existe')
+    } else { res.status(400).send("ID no existe") }
   } catch (error) {
     res.status(500).json({
       descripcion: "Error interno del servidor",
@@ -200,10 +221,19 @@ router.put('/habitaciones/update/:id/:nro_habitacion', (req, res) => {
 
 router.delete('/inquilinos/delete/:id', (req, res) => {
   try {
-    if (req.params.id) {
-      usuario = usuario.filter(user => user.id != req.params.id)
+    let id_user = req.params.id
+    if (id_user) {
+      usuario = usuario.filter(user => user.id != id_user)
       let json_usuario = JSON.stringify(usuario)
       fs.writeFileSync('inquilinos.json', json_usuario, 'utf-8')
+
+      for (let habi in habitacion) {
+        habitacion[habi] = habitacion[habi].filter(user => user.id !== id_user)
+      }
+      
+      let json_habitaciones = JSON.stringify(habitacion)
+      fs.writeFileSync('habitaciones.json', json_habitaciones, 'utf-8')
+      
       res.status(200).send('Inquilino eliminado del sistema')
     } else {
       res.status(400).send("El ID no existe")
@@ -220,14 +250,18 @@ router.delete('/habitaciones/delete/:id_user', (req, res) => {
   try {
     let id = req.params.id_user
     if (id) {
-      
-      for (let habi in habitacion) {
-        habitacion[habi] = habitacion[habi].filter(user => user.id !== id)
-      }
-      
-      let json_habitaciones = JSON.stringify(habitacion)
-      fs.writeFileSync('habitaciones.json', json_habitaciones, 'utf-8')
-      res.status(200).send('Inquilino fuera de la habitación')
+      usuario.forEach(user => {
+        if (user.id == id) {
+          for (let habi in habitacion) {
+            habitacion[habi] = habitacion[habi].filter(user => user.id !== id)
+            let json_habitaciones = JSON.stringify(habitacion)
+            fs.writeFileSync('habitaciones.json', json_habitaciones, 'utf-8')
+            res.status(200).send('Inquilino fuera de la habitación')
+          }
+        } else {
+          res.status(400).send("ID es invalido")
+        }
+      });
     } else {
       res.status(400).send("El ID no existe")
     }
