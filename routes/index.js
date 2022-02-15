@@ -164,7 +164,7 @@ router.put('/inquilinos/update/:id', (req, res) => {
             }
 
             if(updateUser.direccion) {
-              /^[A-Za-zñÑáéíóúÁÉÍÓÚüÜ0-9\-\s]+$/g.test(updateUser.direccion) ? user.direccion = updateUser.direccion : res.status(400).send('Direccion Invalida')
+              /^[A-Za-zñÑáéíóúÁÉÍÓÚüÜ]+$/g.test(updateUser.direccion) ? user.direccion = updateUser.direccion : res.status(400).send('Direccion Invalida')
             }
           }
         })
